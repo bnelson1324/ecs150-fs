@@ -68,20 +68,16 @@ int fs_mount(const char *diskname) {
 }
 
 int fs_umount(void) {
-    /**
-     * fs_umount - Unmount file system
-     *
-     * Unmount the currently mounted file system and close the underlying virtual
-     * disk file.
-     *
-     * Return: -1 if no FS is currently mounted, or if the virtual disk cannot be
-     * closed, or if there are still open file descriptors. 0 otherwise.
-     */
+    free(superblock);
+    free(fat);
+    free(rootFiles);
 
-    /* TODO */
+    if (block_disk_close() == -1) {
+        perror("fs_umount: failure to close disk");
+        return -1;
+    }
 
-    // TODO: dealloc buffers
-    // TODO: close disk
+    // TODO 3.2: return -1 if there are still open file descriptors
 
     return 0;
 }

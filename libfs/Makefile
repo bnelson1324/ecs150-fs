@@ -1,4 +1,8 @@
 CC := cc -Wall -Wextra -Werror
+
+AR := ar
+ARFLAGS := rcs
+
 OBJ = fs.o disk.o
 
 # Target library
@@ -7,7 +11,7 @@ lib := libfs.a
 all: $(lib)
 
 $(lib): $(OBJ)
-	$(CC) -o $(lib) $^
+	$(AR) $(ARFLAGS) $@ $^
 
 %.o: %.c
 	$(CC) -c $<
