@@ -30,26 +30,29 @@ uint16_t *fat;
 rootFile_t *rootFiles;
 
 int fs_mount(const char *diskname) {
-    // allocate buffers
-    superblock = malloc(BLOCK_SIZE);
-    fat = malloc(BLOCK_SIZE * superblock->fatBlkCount);
-    rootFiles = malloc(BLOCK_SIZE);
-
-    // load metadata
     if (block_disk_open(diskname) == -1) {
         perror("fs_mount: failure to open disk");
         return -1;
     }
+
+    // load superblock
+    superblock = malloc(BLOCK_SIZE);
     if (block_read(0, superblock) == -1) {
         perror("fs_mount: failure to read superblock");
         return -1;
     }
+
+    // load fat
+    fat = malloc(BLOCK_SIZE * superblock->fatBlkCount);
     for (size_t i = 0; i < superblock->fatBlkCount; i++) {
-        if (block_read(i + 1, &fat[i]) == -1) {
+        if (block_read(i + 1, (uint8_t*)fat + i * BLOCK_SIZE) == -1) {
             perror("fs_mount: failure to read FAT");
             return -1;
         }
     }
+
+    // load root
+    rootFiles = malloc(BLOCK_SIZE);
     if (block_read(superblock->rootBlkIndex, rootFiles) == -1) {
         perror("fs_mount: failure to read root");
         return -1;
@@ -68,6 +71,11 @@ int fs_mount(const char *diskname) {
 }
 
 int fs_umount(void) {
+    if (superblock == NULL) {
+        perror("fs_mount: already unmounted");
+        return -1;
+    }
+
     free(superblock);
     superblock = NULL;
     free(fat);
@@ -86,16 +94,6 @@ int fs_umount(void) {
 }
 
 int fs_info(void) {
-    /* TODO */
-
-    /**
-     * fs_info - Display information about file system
-     *
-     * Display some information about the currently mounted file system.
-     *
-     * Return: -1 if no underlying virtual disk was opened. 0 otherwise.
-     */
-
     if (superblock == NULL) {
         perror("fs_info: no disk open / no fs mounted");
         return -1;
@@ -112,7 +110,7 @@ int fs_info(void) {
         if (fat[i] == 0)
             fatEmpty++;
     }
-    printf("fat_free_ratio=%d/%d\n", fatEmpty, superblock->fatBlkCount);
+    printf("fat_free_ratio=%d/%d\n", fatEmpty, superblock->dataBlkCount);
 
     int rootDirEmpty = 0;
     for (int i = 0; i < FS_FILE_MAX_COUNT; i++) {
