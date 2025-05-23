@@ -69,8 +69,11 @@ int fs_mount(const char *diskname) {
 
 int fs_umount(void) {
     free(superblock);
+    superblock = NULL;
     free(fat);
+    fat = NULL;
     free(rootFiles);
+    rootFiles = NULL;
 
     if (block_disk_close() == -1) {
         perror("fs_umount: failure to close disk");
@@ -92,6 +95,31 @@ int fs_info(void) {
      *
      * Return: -1 if no underlying virtual disk was opened. 0 otherwise.
      */
+
+    if (superblock == NULL) {
+        perror("fs_info: no disk open / no fs mounted");
+        return -1;
+    }
+
+    printf("total_blk_count=%d\n", superblock->totalBlkCount);
+    printf("fat_blk_count=%d\n", superblock->fatBlkCount);
+    printf("rdir_blk=%d\n", superblock->rootBlkIndex);
+    printf("data_blk=%d\n", superblock->dataBlkStartIndex);
+    printf("data_blk_count=%d\n", superblock->dataBlkCount);
+
+    int fatEmpty = 0;
+    for (int i = 0; i < superblock->dataBlkCount; i++) {
+        if (fat[i] == 0)
+            fatEmpty++;
+    }
+    printf("fat_free_ratio=%d/%d\n", fatEmpty, superblock->fatBlkCount);
+
+    int rootDirEmpty = 0;
+    for (int i = 0; i < FS_FILE_MAX_COUNT; i++) {
+        if (rootFiles[i].fileName[0] == '\0')
+            rootDirEmpty++;
+    }
+    printf("rdir_free_ratio=%d/%d\n", rootDirEmpty,FS_FILE_MAX_COUNT);
 
     return 0;
 }
