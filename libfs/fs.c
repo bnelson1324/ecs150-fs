@@ -99,6 +99,7 @@ int fs_info(void) {
         return -1;
     }
 
+    printf("FS Info:\n");
     printf("total_blk_count=%d\n", superblock->totalBlkCount);
     printf("fat_blk_count=%d\n", superblock->fatBlkCount);
     printf("rdir_blk=%d\n", superblock->rootBlkIndex);
